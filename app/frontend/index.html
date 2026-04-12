@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>Frontend</h2>
+
+<button onclick="call('/api/profile')">Profile</button>
+<button onclick="call('/debug')">Debug</button>
+<button onclick="execCmd()">Exec</button>
+
+<pre id="out"></pre>
+
+<script>
+function call(path) {
+  fetch(`http://api-service:8080${path}`)
+    .then(r => r.text())
+    .then(d => document.getElementById("out").innerText = d);
+}
+
+function execCmd() {
+  fetch("http://api-service:8080/exec?cmd=whoami")
+    .then(r => r.text())
+    .then(d => document.getElementById("out").innerText = d);
+}
+</script>
+</body>
+</html>v
