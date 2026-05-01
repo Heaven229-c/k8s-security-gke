@@ -1,50 +1,351 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>K8s Security Lab</title>
   <style>
-    body { font-family: Arial; max-width: 900px; margin: 40px auto; padding: 20px; }
-    button { padding: 10px 20px; margin: 5px; background: #01696f; color: white; border: none; border-radius: 5px; }
-    pre { background: #f5f5f5; padding: 16px; border-radius: 8px; }
+    :root {
+      --bg: #f6f8fb;
+      --surface: #ffffff;
+      --surface-2: #f1f5f9;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #dbe3ef;
+      --primary: #0f766e;
+      --primary-2: #115e59;
+      --danger: #b91c1c;
+      --success: #166534;
+      --warning: #b45309;
+      --shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+      --radius: 16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--text);
+      background: linear-gradient(180deg, #f8fafc 0%, #eef4f7 100%);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    .hero {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 5vw, 42px);
+      line-height: 1.1;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 70ch;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+    }
+
+    .card p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .actions, .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: var(--primary);
+      color: white;
+      padding: 12px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    button:hover { background: var(--primary-2); }
+
+    button.secondary {
+      background: white;
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    button.secondary:hover {
+      background: var(--surface-2);
+    }
+
+    button.warn {
+      background: #92400e;
+    }
+
+    button.warn:hover {
+      background: #78350f;
+    }
+
+    input[type="text"] {
+      width: min(100%, 420px);
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: white;
+      color: var(--text);
+      font: inherit;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #ecfdf5;
+      color: var(--success);
+      border: 1px solid #bbf7d0;
+    }
+
+    .status.warn {
+      background: #fff7ed;
+      color: var(--warning);
+      border-color: #fed7aa;
+    }
+
+    .status.err {
+      background: #fef2f2;
+      color: var(--danger);
+      border-color: #fecaca;
+    }
+
+    pre {
+      margin: 0;
+      padding: 18px;
+      border-radius: 14px;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 280px;
+      overflow: auto;
+      line-height: 1.55;
+      font-size: 13px;
+      font-family: var(--mono);
+      border: 1px solid #1e293b;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .kv {
+      display: grid;
+      gap: 12px;
+    }
+
+    .item {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      background: var(--surface-2);
+    }
+
+    .item strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .item code {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: #0f766e;
+    }
+
+    .footer {
+      margin-top: 24px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .wrap { padding: 18px 14px 32px; }
+      .hero, .card { padding: 18px; }
+    }
   </style>
 </head>
 <body>
-  <h1>K8s Security Lab</h1>
-  <p>Frontend này gọi API qua port-forward localhost để phục vụ debug tuần 0.</p>
-  <button onclick="testProfile()">Profile</button>
-  <button onclick="testDebug()">Debug</button>
-  <button onclick="testExec()">Exec</button>
-  <pre id="out">Click button để test...</pre>
+  <div class="wrap">
+    <section class="hero">
+      <div class="eyebrow">Kubernetes Security Lab • Baseline dashboard</div>
+      <h1>K8s Security Lab Dashboard</h1>
+      <p>
+        Frontend này dùng reverse proxy cùng origin để phục vụ demo nhiều tuần:
+        health check, profile data, debug runtime, và command execution cho lab.
+      </p>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Interactive tests</h2>
+        <p>Chọn bài test nhanh hoặc nhập command tùy chỉnh để gọi endpoint lab.</p>
+
+        <div class="actions">
+          <button onclick="runRequest('/api/healthz')">Health</button>
+          <button onclick="runRequest('/api/profile')">Profile</button>
+          <button onclick="runRequest('/debug')">Debug</button>
+          <button class="warn" onclick="runRequest('/debug/exec?cmd=whoami')">Exec: whoami</button>
+          <button class="warn" onclick="runRequest('/debug/exec?cmd=id')">Exec: id</button>
+          <button class="secondary" onclick="clearOutput()">Clear</button>
+        </div>
+
+        <div class="toolbar">
+          <input id="cmd" type="text" value="uname -a" placeholder="Nhập command cho /debug/exec?cmd=..." />
+          <button class="secondary" onclick="runCustomExec()">Run custom command</button>
+        </div>
+
+        <div id="status" class="status">Idle</div>
+        <br /><br />
+        <pre id="output">Click một nút để bắt đầu test...</pre>
+      </section>
+
+      <aside class="card">
+        <h2>Lab context</h2>
+        <p>Các thông tin này giúp bạn demo và giải thích kết quả ở các tuần sau.</p>
+        <div class="kv">
+          <div class="item">
+            <strong>Frontend routing</strong>
+            <span>Frontend gọi API qua <code>/api/*</code> và <code>/debug*</code> cùng origin.</span>
+          </div>
+          <div class="item">
+            <strong>Backend proxy</strong>
+            <span>Nginx chuyển tiếp request tới <code>api-service.vulnerable.svc.cluster.local:8080</code>.</span>
+          </div>
+          <div class="item">
+            <strong>Baseline weakness</strong>
+            <span>API đang chạy root, token service account được mount, và có endpoint debug phục vụ lab.</span>
+          </div>
+          <div class="item">
+            <strong>Useful demo flow</strong>
+            <span>Health → Profile → Debug → Exec → sau đó thêm RBAC, NetworkPolicy, Pod Security, detection.</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer">
+      Gợi ý mở rộng cho các tuần sau: thêm secure/vulnerable toggle, badge version image,
+      trạng thái policy, và bảng kết quả attack-defense theo từng domain.
+    </div>
+  </div>
 
   <script>
-  const API_BASE = "http://localhost:8080";
+    const out = document.getElementById('output');
+    const statusEl = document.getElementById('status');
 
-  async function testProfile() {
-    try {
-      const res = await fetch(`${API_BASE}/api/profile`);
-      document.getElementById('out').textContent = await res.text();
-    } catch(e) {
-      document.getElementById('out').textContent = `Error: ${e.message}`;
+    function setStatus(text, kind = 'ok') {
+      statusEl.textContent = text;
+      statusEl.className = 'status' + (kind === 'warn' ? ' warn' : kind === 'err' ? ' err' : '');
     }
-  }
 
-  async function testDebug() {
-    try {
-      const res = await fetch(`${API_BASE}/debug`);
-      document.getElementById('out').textContent = await res.text();
-    } catch(e) {
-      document.getElementById('out').textContent = `Error: ${e.message}`;
+    function pretty(text) {
+      try {
+        return JSON.stringify(JSON.parse(text), null, 2);
+      } catch {
+        return text;
+      }
     }
-  }
 
-  async function testExec() {
-    try {
-      const res = await fetch(`${API_BASE}/debug/exec?cmd=whoami`);
-      document.getElementById('out').textContent = await res.text();
-    } catch(e) {
-      document.getElementById('out').textContent = `Error: ${e.message}`;
+    async function runRequest(path) {
+      setStatus(`Loading ${path} ...`, 'warn');
+      out.textContent = `Request: ${path}\n\nWaiting for response...`;
+
+      try {
+        const res = await fetch(path, {
+          headers: { 'Accept': 'application/json,text/plain,*/*' }
+        });
+        const text = await res.text();
+        out.textContent =
+          `Request: ${path}\n` +
+          `Status: ${res.status} ${res.statusText}\n` +
+          `Time: ${new Date().toLocaleString()}\n\n` +
+          `${pretty(text)}`;
+        setStatus(`Success: ${path}`, 'ok');
+      } catch (e) {
+        out.textContent =
+          `Request: ${path}\n` +
+          `Time: ${new Date().toLocaleString()}\n\n` +
+          `Error: ${e.message}`;
+        setStatus(`Failed: ${path}`, 'err');
+      }
     }
-  }
+
+    function runCustomExec() {
+      const cmd = document.getElementById('cmd').value.trim();
+      if (!cmd) {
+        setStatus('Command is empty', 'err');
+        out.textContent = 'Vui lòng nhập command trước khi chạy.';
+        return;
+      }
+      runRequest(`/debug/exec?cmd=${encodeURIComponent(cmd)}`);
+    }
+
+    function clearOutput() {
+      out.textContent = 'Click một nút để bắt đầu test...';
+      setStatus('Idle', 'ok');
+    }
   </script>
 </body>
 </html>
