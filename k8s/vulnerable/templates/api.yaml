@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-service
+  namespace: vulnerable
+  labels:
+    app.kubernetes.io/name: api-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: k8s-security-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: api-service
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: k8s-security-lab
+      annotations:
+        app.kubernetes.io/version: "${TAG}"
+    spec:
+      serviceAccountName: default
+      automountServiceAccountToken: true
+      containers:
+      - name: api
+        image: ${IMAGE_BASE}-api:${TAG}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: REDIS_URL
+          value: redis://redis.vulnerable.svc.cluster.local:6379
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: true
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+        readinessProbe:
+          httpGet:
+            path: /api/healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /api/healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: vulnerable
+  labels:
+    app.kubernetes.io/name: api-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: k8s-security-lab
+spec:
+  selector:
+    app.kubernetes.io/name: api-service
+  ports:
+  - port: 8080
+    targetPort: 8080

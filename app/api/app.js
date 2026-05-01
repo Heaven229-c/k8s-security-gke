@@ -2,50 +2,52 @@ const express = require('express');
 const { exec } = require('child_process');
 const redis = require('redis');
 const fs = require('fs');
+const os = require('os');
 
 const app = express();
 
-// Redis
 const client = redis.createClient({
-  url: 'redis://redis.vulnerable.svc.cluster.local:6379'
-});
-client.connect();
-
-// Health
-app.get('/api/healthz', (req, res) => res.send("OK"));
-
-// 3-tier: đọc Redis
-app.get('/api/profile', async (req, res) => {
-  const val = await client.get('user');
-  res.send(val || "no data");
+  url: process.env.REDIS_URL || 'redis://redis.vulnerable.svc.cluster.local:6379'
 });
 
-// Debug (info leak)
-app.get('/debug', (req, res) => {
-  res.json({
-    env: process.env,
-    user: process.env.USER
-  });
-});
+client.on('error', (err) => console.error('Redis Error:', err.message));
 
-// 🔥 Exploit endpoint (QUAN TRỌNG)
-app.get('/exec', (req, res) => {
-  exec(req.query.cmd, (err, stdout, stderr) => {
-    res.send(stdout || stderr);
-  });
-});
-
-// Token
-app.get('/api/token', (req, res) => {
+(async () => {
   try {
-    const token = fs.readFileSync(
-      "/var/run/secrets/kubernetes.io/serviceaccount/token",
-      "utf8"
-    );
-    res.send(token);
-  } catch {
-    res.send("no token");
+    await client.connect();
+    console.log('Redis connected');
+  } catch (e) {
+    console.error('Redis connect failed:', e.message);
+  }
+})();
+
+app.get('/api/healthz', (req, res) => res.send('OK'));
+
+app.get('/api/profile', async (req, res) => {
+  try {
+    const val = await client.get('user');
+    res.json({ profile: val || 'no data', hostname: os.hostname() });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
-app.listen(8080, () => console.log("API running"));
+app.get('/debug', (req, res) => {
+  const tokenPath = '/var/run/secrets/kubernetes.io/serviceaccount/token';
+  res.json({
+    hostname: os.hostname(),
+    uid: process.getuid ? process.getuid() : 'n/a',
+    tokenMounted: fs.existsSync(tokenPath)
+  });
+});
+
+app.get('/debug/exec', (req, res) => {
+  const cmd = req.query.cmd;
+  if (!cmd) return res.status(400).send('missing cmd');
+  exec(cmd, { timeout: 5000 }, (err, stdout, stderr) => {
+    if (err) return res.status(500).send(stderr || err.message);
+    res.send(stdout || stderr || 'done');
+  });
+});
+
+app.listen(8080, () => console.log('API on 8080'));
